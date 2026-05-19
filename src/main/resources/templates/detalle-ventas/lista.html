@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Detalle Ventas - KinalApp</title>
+    <title>Detalle de Ventas - KinalApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </head>
@@ -15,10 +17,31 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/clientes}">Clientes</a></li>
-                <li class="nav-item"><a class="nav-link" th:href="@{/usuarios}">Usuarios</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/usuarios}">Usuarios</a>
+                </li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/productos}">Productos</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/ventas}">Ventas</a></li>
                 <li class="nav-item"><a class="nav-link active" th:href="@{/detalle-ventas}">Detalle Ventas</a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span sec:authentication="name"></span>
+                        <span sec:authorize="hasRole('ADMIN')" class="badge bg-danger ms-1">ADMIN</span>
+                        <span sec:authorize="hasRole('USER')" class="badge bg-primary ms-1">USER</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
@@ -27,27 +50,23 @@
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2><i class="bi bi-list-check"></i> Detalle de Ventas</h2>
-
+        <h2><i class="bi bi-receipt"></i> Detalle de Ventas</h2>
         <div>
-            <!-- Botón Inicio -->
             <a th:href="@{/}" class="btn btn-secondary me-2">
                 <i class="bi bi-house-door-fill"></i> Inicio
             </a>
-
-            <!-- Botón Nuevo -->
             <a th:href="@{/detalle-ventas/nuevo}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Nuevo Detalle
             </a>
         </div>
     </div>
 
-    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <span th:text="${error}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -69,23 +88,30 @@
                 <tbody>
                 <tr th:each="detalle : ${detalles}">
                     <td th:text="${detalle.codigoDetalleVenta}"></td>
-                    <td th:text="'Venta #' + ${detalle.venta.codigoVenta}"></td>
+                    <td th:text="${detalle.venta.codigoVenta}"></td>
                     <td th:text="${detalle.producto.nombreProducto}"></td>
                     <td th:text="${detalle.cantidad}"></td>
-                    <td th:text="'Q' + ${detalle.precioUnitario}"></td>
-                    <td th:text="'Q' + ${detalle.subtotal}"></td>
+                    <td th:text="'Q' + ${#numbers.formatDecimal(detalle.precioUnitario, 1, 2)}"></td>
+                    <td th:text="'Q' + ${#numbers.formatDecimal(detalle.subtotal, 1, 2)}"></td>
                     <td class="text-center">
-                        <a th:href="@{/detalle-ventas/editar/{codigo}(codigo=${detalle.codigoDetalleVenta})}"
+                        <a sec:authorize="hasRole('ADMIN')"
+                           th:href="@{/detalle-ventas/editar/{codigo}(codigo=${detalle.codigoDetalleVenta})}"
                            class="btn btn-warning btn-sm me-1">
                             <i class="bi bi-pencil-fill"></i> Editar
                         </a>
-                        <form th:action="@{/detalle-ventas/eliminar/{codigo}(codigo=${detalle.codigoDetalleVenta})}"
+
+                        <form sec:authorize="hasRole('ADMIN')"
+                              th:action="@{/detalle-ventas/eliminar/{codigo}(codigo=${detalle.codigoDetalleVenta})}"
                               method="post" style="display:inline"
                               onsubmit="return confirm('¿Estás seguro de eliminar este detalle?')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="bi bi-trash-fill"></i> Eliminar
                             </button>
                         </form>
+
+                        <span sec:authorize="hasRole('USER')" class="text-muted small">
+                            Solo lectura
+                        </span>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(detalles)}">
