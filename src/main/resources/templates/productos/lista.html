@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,10 +17,31 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/clientes}">Clientes</a></li>
-                <li class="nav-item"><a class="nav-link" th:href="@{/usuarios}">Usuarios</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/usuarios}">Usuarios</a>
+                </li>
                 <li class="nav-item"><a class="nav-link active" th:href="@{/productos}">Productos</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/ventas}">Ventas</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/detalle-ventas}">Detalle Ventas</a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span sec:authentication="name"></span>
+                        <span sec:authorize="hasRole('ADMIN')" class="badge bg-danger ms-1">ADMIN</span>
+                        <span sec:authorize="hasRole('USER')" class="badge bg-primary ms-1">USER</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
@@ -28,24 +51,22 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2><i class="bi bi-box-seam"></i> Productos</h2>
-
         <div>
             <a th:href="@{/}" class="btn btn-secondary me-2">
                 <i class="bi bi-house-door-fill"></i> Inicio
             </a>
-
             <a th:href="@{/productos/nuevo}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Nuevo Producto
             </a>
         </div>
     </div>
 
-    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show">
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <span th:text="${error}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -67,29 +88,31 @@
                 <tr th:each="producto : ${productos}">
                     <td th:text="${producto.codigoProducto}"></td>
                     <td th:text="${producto.nombreProducto}"></td>
-                    <td th:text="'Q' + ${producto.precio}"></td>
-                    <td>
-                            <span th:if="${producto.stock > 0}" th:text="${producto.stock}"
-                                  class="badge bg-info text-dark"></span>
-                        <span th:if="${producto.stock == 0}"
-                              class="badge bg-warning text-dark">Sin stock</span>
-                    </td>
+                    <td th:text="'Q' + ${#numbers.formatDecimal(producto.precio, 1, 2)}"></td>
+                    <td th:text="${producto.stock}"></td>
                     <td>
                         <span th:if="${producto.estado == 1}" class="badge bg-success">Activo</span>
                         <span th:if="${producto.estado == 0}" class="badge bg-danger">Inactivo</span>
                     </td>
                     <td class="text-center">
-                        <a th:href="@{/productos/editar/{codigo}(codigo=${producto.codigoProducto})}"
+                        <a sec:authorize="hasRole('ADMIN')"
+                           th:href="@{/productos/editar/{codigo}(codigo=${producto.codigoProducto})}"
                            class="btn btn-warning btn-sm me-1">
                             <i class="bi bi-pencil-fill"></i> Editar
                         </a>
-                        <form th:action="@{/productos/eliminar/{codigo}(codigo=${producto.codigoProducto})}"
+
+                        <form sec:authorize="hasRole('ADMIN')"
+                              th:action="@{/productos/eliminar/{codigo}(codigo=${producto.codigoProducto})}"
                               method="post" style="display:inline"
                               onsubmit="return confirm('¿Estás seguro de eliminar este producto?')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="bi bi-trash-fill"></i> Eliminar
                             </button>
                         </form>
+
+                        <span sec:authorize="hasRole('USER')" class="text-muted small">
+                            Solo lectura
+                        </span>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(productos)}">

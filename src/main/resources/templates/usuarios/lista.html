@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,10 +17,30 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/clientes}">Clientes</a></li>
-                <li class="nav-item"><a class="nav-link active" th:href="@{/usuarios}">Usuarios</a></li>
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/usuarios}">Usuarios</a>
+                </li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/productos}">Productos</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/ventas}">Ventas</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/detalle-ventas}">Detalle Ventas</a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span sec:authentication="name"></span>
+                        <span class="badge bg-danger ms-1">ADMIN</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
@@ -26,34 +48,30 @@
 
 <div class="container mt-4">
 
-    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2><i class="bi bi-journal-text"></i> Usuarios</h2>
-
+        <h2><i class="bi bi-person-gear"></i> Usuarios
+            <span class="badge bg-danger ms-2" style="font-size: 0.6em">Solo ADMIN</span>
+        </h2>
         <div>
             <a th:href="@{/}" class="btn btn-secondary me-2">
                 <i class="bi bi-house-door-fill"></i> Inicio
             </a>
-
             <a th:href="@{/usuarios/nuevo}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Nuevo Usuario
             </a>
         </div>
     </div>
 
-    <!-- Mensaje de éxito -->
     <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
         <span th:text="${mensaje}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Mensaje de error -->
     <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <span th:text="${error}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Tabla de usuarios -->
     <div class="card shadow-sm">
         <div class="card-body">
             <table class="table table-striped table-hover align-middle">
@@ -73,19 +91,22 @@
                     <td th:text="${usuario.username}"></td>
                     <td th:text="${usuario.email}"></td>
                     <td>
-                        <span class="badge bg-secondary" th:text="${usuario.rol}"></span>
+                        <span th:if="${usuario.rol == 'ADMIN'}" class="badge bg-danger">ADMIN</span>
+                        <span th:if="${usuario.rol == 'USER'}" class="badge bg-primary">USER</span>
+                        <span th:if="${usuario.rol != 'ADMIN' and usuario.rol != 'USER'}"
+                              class="badge bg-secondary" th:text="${usuario.rol}"></span>
                     </td>
                     <td>
                         <span th:if="${usuario.estado == 1}" class="badge bg-success">Activo</span>
                         <span th:if="${usuario.estado == 0}" class="badge bg-danger">Inactivo</span>
                     </td>
                     <td class="text-center">
-                        <!-- Botón Editar -->
+                        <!-- ADMIN tiene acceso total a usuarios -->
                         <a th:href="@{/usuarios/editar/{codigo}(codigo=${usuario.codigoUsuario})}"
                            class="btn btn-warning btn-sm me-1">
                             <i class="bi bi-pencil-fill"></i> Editar
                         </a>
-                        <!-- Botón Eliminar -->
+
                         <form th:action="@{/usuarios/eliminar/{codigo}(codigo=${usuario.codigoUsuario})}"
                               method="post" style="display:inline"
                               onsubmit="return confirm('¿Estás seguro de eliminar este usuario?')">
@@ -95,11 +116,8 @@
                         </form>
                     </td>
                 </tr>
-                <!-- Si no hay usuarios -->
                 <tr th:if="${#lists.isEmpty(usuarios)}">
-                    <td colspan="6" class="text-center text-muted">
-                        No hay usuarios registrados
-                    </td>
+                    <td colspan="6" class="text-center text-muted">No hay usuarios registrados</td>
                 </tr>
                 </tbody>
             </table>
